@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { LoadingStep, InventoryItem, User } from '@/types';
+import {useState, useRef, useEffect} from 'react';
+import { LoadingStep, User } from '@/types';
 import { useSteam } from '@/contexts/SteamContext';
 
 const initialLoadingSteps: LoadingStep[] = [
@@ -18,6 +18,10 @@ export function useInventory() {
   const [showLoadingModal, setShowLoadingModal] = useState(false);
   
   const checkButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setShowInventory(false);
+  }, [selectedGame]);
 
   const updateStep = (index: number, status: LoadingStep['status'], errorMessage?: string) => {
     setLoadingSteps(steps => steps.map((step, i) => {
@@ -40,7 +44,6 @@ export function useInventory() {
     setLoadingSteps(steps => steps.map(step => ({ ...step, status: 'pending' })));
 
     try {
-      // Step 1: Resolve SteamID
       updateStep(0, 'loading');
       const steamidResponse = await fetch(
         `https://api.buff-163.ru/${selectedGame}/steamid?text=${encodeURIComponent(profileUrl)}`,
@@ -57,10 +60,9 @@ export function useInventory() {
       }
 
       const { steamid64 } = await steamidResponse.json();
-      setResolvedSteamId(steamid64); // Set the resolved Steam ID
+      setResolvedSteamId(steamid64);
       updateStep(0, 'success');
 
-      // Step 2: Fetch Inventory
       updateStep(1, 'loading');
       const inventoryResponse = await fetch(
         `https://api.buff-163.ru/inventory/${steamid64}/${selectedGame}`,
@@ -79,17 +81,14 @@ export function useInventory() {
       await inventoryResponse.json();
       updateStep(1, 'success');
 
-      // Step 3: Add Prices (simulated)
       updateStep(2, 'loading');
       await new Promise(resolve => setTimeout(resolve, 1200));
       updateStep(2, 'success');
 
-      // Step 4: Complete
       updateStep(3, 'loading');
       await new Promise(resolve => setTimeout(resolve, 500));
       updateStep(3, 'success');
 
-      // Auto-close after success
       setTimeout(() => {
         setShowLoadingModal(false);
         setShowInventory(true);

@@ -63,7 +63,7 @@ export function useInventoryPrices(
       .finally(() => setLoading(false));
 
     return () => controller.abort();
-  }, [steamId, selectedGame]);
+  }, [steamId]);
 
   return { inventory, loading, error };
 }
